@@ -128,8 +128,7 @@ class MY_Model extends CI_Model {
 	// Hook functions {{{
 	function LoadHooks() {
 		if (isset($GLOBALS['model_hooks']))
-			foreach ($GLOBALS['model_hooks'] as $key => $val)
-				$this->On($key, $val);
+			$GLOBALS['model_hooks']($this);
 	}
 
 	function On($event, $function, $method = 'replace') {
