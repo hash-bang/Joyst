@@ -15,6 +15,7 @@ class MY_Model extends CI_Model {
 
 	var $cache = array( // What to cache
 		'get' => 1,
+		'getby' => 1,
 		'getall' => 0,
 		'count' => 0,
 	);
@@ -25,6 +26,11 @@ class MY_Model extends CI_Model {
 	function __construct() {
 		parent::__construct();
 		$this->LoadHooks();
+	}
+
+	function __call($method, $params) {
+		if (preg_match('/^getby(.+)$/i', $method, $matches)) // Make getBy* resolve to GetBy()
+			return $this->GetBy(strtolower($matches[1]), $params[0]);
 	}
 
 	// Schema loader / reloader {{{
@@ -155,8 +161,30 @@ class MY_Model extends CI_Model {
 		$this->db->where($this->schema['_id']['field'], $id);
 		$this->db->limit(1);
 		$row = $this->db->get()->row_array();
+		$this->Populate($row);
+		return $this->SetCache('get', $id, $row);
+	}
+
+	/**
+	* Retrieve a single item by a given field
+	* This is an assistant function to the magic function that allows 'GetBy$FIELD' type calls
+	* e.g. GetBy('email', 'matt@mfdc.biz') OR GetByEmail('matt@mfdc.biz')
+	* @param string $param A single field to retrieve data by
+	* @param mixed $value The criteria to search by
+	* @return array The first matching row that matches the given criteria
+	*/
+	function GetBy($param, $value) {
+		$this->LoadSchema();
+		if ($cacheval = $this->GetCache('getby', $cacheid = "$param-$value"))
+			return $cacheval;
+
+		$this->db->from($this->table);
+		$this->db->where($param, $value);
+		$this->db->limit(1);
+		echo $this->db->_compile_select();
+		$row = $this->db->get()->row_array();
 		$out = $this->Populate($row);
-		return $this->SetCache('get', $id, $out);
+		return $this->SetCache('getby', $cacheid, $out);
 	}
 
 	/**
