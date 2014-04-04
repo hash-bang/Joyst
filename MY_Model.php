@@ -1,11 +1,11 @@
 <?
 /**
 * Triggers:
-*	create($data) - Used before the insert call in a DB
-*	get($row) - Mangling function to rewrite a record (used in Get() and GetAll() functions per row)
-*	getall($active_record) - Used to add additional default parameters to the GetAll() function before it runs
-*	save($data) - Used before the update call in a DB
-*	schema($schema) - Schema is loaded
+*	create(&$data) - Used before the insert call in a DB
+*	getall(&$where, &$orderby, &$limit, &$offset) - Used to add additional default parameters to the GetAll() function before it runs
+*	row(&$row) - Mangling function to rewrite a record (used in Get() and GetAll() functions per row)
+*	save(&$data) - Used before the update call in a DB
+*	schema(&$schema) - Schema is loaded
 */
 class MY_Model extends CI_Model {
 	var $model = '';
@@ -60,7 +60,7 @@ class MY_Model extends CI_Model {
 		} elseif (!$this->table)
 			trigger_error("Table is not set for model {$this->model}") && die();
 		// }}}
-		$this->schema = $this->Trigger('schema', $this->schema);
+		$this->Trigger('schema', $this->schema);
 		// Map _id to whatever its pointing at {{{
 		if (isset($this->schema['_id']) && is_string($this->schema['_id'])) {
 			if (!isset($this->schema[$this->schema['_id']]))
@@ -108,19 +108,12 @@ class MY_Model extends CI_Model {
 			unset($this->hooks[$event]);
 	}
 
-	function Trigger($event) {
-		$params = func_get_args();
-		array_shift($params);
-		$payload = isset($params[0]) ? $params[0] : null;
-
+	function Trigger($event, &$a = null, &$b = null, &$c = null) {
 		if (!isset($this->hooks[$event]) || !$this->hooks[$event])
-			return $payload;
+			return;
 
-		foreach ($this->hooks[$event] as $func) {
-			$payload = call_user_func_array($func, $params);
-			$params[0] = $payload;
-		}
-		return $payload;
+		foreach ($this->hooks[$event] as $func)
+			$func($a, $b, $c);
 	}
 	// }}}
 	// Cache handling functions {{{
@@ -161,7 +154,7 @@ class MY_Model extends CI_Model {
 		$this->db->where($this->schema['_id']['field'], $id);
 		$this->db->limit(1);
 		$row = $this->db->get()->row_array();
-		$this->Populate($row);
+		$this->Row($row);
 		return $this->SetCache('get', $id, $row);
 	}
 
@@ -183,8 +176,8 @@ class MY_Model extends CI_Model {
 		$this->db->limit(1);
 		echo $this->db->_compile_select();
 		$row = $this->db->get()->row_array();
-		$out = $this->Populate($row);
-		return $this->SetCache('getby', $cacheid, $out);
+		$this->Row($row);
+		return $this->SetCache('getby', $cacheid, $row);
 	}
 
 	/**
@@ -207,7 +200,10 @@ class MY_Model extends CI_Model {
 				return $value;
 		}
 
+		$this->Trigger('getall', $where, $orderby, $limit, $offset);
+
 		$this->db->from($this->table);
+
 		if ($where)
 			$this->db->where($where);
 		if ($orderby)
@@ -215,11 +211,11 @@ class MY_Model extends CI_Model {
 		if ($limit || $offset)
 			$this->db->limit($limit,$offset);
 
-		$this->db = $this->Trigger('getall', $this->db);
-
 		$out = array();
-		foreach ($this->db->get()->result_array() as $row)
-			$out[] = $this->Populate($row);
+		foreach ($this->db->get()->result_array() as $row) {
+			$this->Row($row);
+			$out[] = $row;
+		}
 
 		return isset($cacheid) ? $this->SetCache('getall', $cacheid, $out) : $out;
 	}
@@ -232,14 +228,13 @@ class MY_Model extends CI_Model {
 	* @see GetAll()
 	* @return array The mangled database row
 	*/
-	function Populate($row) {
-		$row = $this->Trigger('get', $row);
+	function Row(&$row) {
+		$this->Trigger('row', $row);
 		if (!$this->_hides)
-			return $row;
+			return;
 		foreach ($this->_hides as $field)
 			if (isset($row[$field]))
 				unset($row[$field]);
-		return $row;
 	}
 
 	/**
@@ -257,11 +252,12 @@ class MY_Model extends CI_Model {
 				return $value;
 		}
 
+		$this->Trigger('getall', $where);
+
 		$this->db->select('COUNT(*) AS count');
 		$this->db->from($this->table);
 		if ($where)
 			$this->db->where($where);
-		$this->db = $this->Trigger('getall', $this->db);
 		$row = $this->db->get()->result_array();
 
 		return isset($cacheid) ? $this->SetCache('count', $cacheid, $row['count']) : $row['count'];
@@ -307,7 +303,8 @@ class MY_Model extends CI_Model {
 		if (!$save) // Nothing to save
 			return FALSE;
 
-		if (! $save = $this->trigger('save', $save))
+		$this->trigger('save', $save);
+		if (!$save) // Nothing to save after trigger
 			return FALSE;
 
 		$this->db->where($this->schema['_id']['field'], $id);
