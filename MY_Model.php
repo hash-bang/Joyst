@@ -6,7 +6,7 @@
 *	getall(&$where, &$orderby, &$limit, &$offset) - Used to add additional default parameters to the GetAll() function before it runs
 *	getschema(&$schema) - Asked to return a schema map to the caller
 *	row(&$row) - Mangling function to rewrite a record (used in Get() and GetAll() functions per row)
-*	save(&$data) - Used before the update call in a DB
+*	save(&$id, &$data) - Used before the update call in a DB
 *	saved($id, $data) - Called after the saving of a record
 *	setschema(&$schema) - Schema is loaded
 */
@@ -392,13 +392,11 @@ class MY_Model extends CI_Model {
 
 		$this->LoadSchema();
 
+		$this->trigger('save', $id, $data);
+
 		$save = $this->SetData($data);
 
 		if (!$save) // Nothing to save
-			return FALSE;
-
-		$this->trigger('save', $save);
-		if (!$save) // Nothing to save after trigger
 			return FALSE;
 
 		$this->db->where($this->schema['_id']['field'], $id);
