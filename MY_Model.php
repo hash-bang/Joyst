@@ -4,10 +4,11 @@
 *	create(&$data) - Used before the insert call in a DB
 *	created($id, $data) - Called after the successful insert of a record
 *	getall(&$where, &$orderby, &$limit, &$offset) - Used to add additional default parameters to the GetAll() function before it runs
+*	getschema(&$schema) - Asked to return a schema map to the caller
 *	row(&$row) - Mangling function to rewrite a record (used in Get() and GetAll() functions per row)
 *	save(&$data) - Used before the update call in a DB
 *	saved($id, $data) - Called after the saving of a record
-*	schema(&$schema) - Schema is loaded
+*	setschema(&$schema) - Schema is loaded
 */
 class MY_Model extends CI_Model {
 	/**
@@ -75,7 +76,10 @@ class MY_Model extends CI_Model {
 			return $this->GetBy(strtolower($matches[1]), $params[0]);
 	}
 	// }}}
-	// Schema loader / reloader {{{
+	// Schema handing functions {{{
+	/**
+	* Load the schema by calling DefineSchema() on the downstream object
+	*/
 	function LoadSchema() {
 		if ($this->schema) // Already loaded
 			return;
@@ -83,6 +87,12 @@ class MY_Model extends CI_Model {
 		$this->ReloadSchema();
 	}
 
+	/**
+	* Reload the schema object along with all processing thats required
+	* This function is usually automatically called by the function that needs it - LoadSchema(), SetSchema() etc.
+	* @see LoadSchema
+	* @see SetSchema
+	*/
 	function ReloadSchema() {
 		// Sanity checks on schema {{{
 		if (!$this->schema)
@@ -102,7 +112,7 @@ class MY_Model extends CI_Model {
 		} elseif (!$this->table)
 			trigger_error("Table is not set for model {$this->model}") && die();
 		// }}}
-		$this->Trigger('schema', $this->schema);
+		$this->Trigger('setschema', $this->schema);
 		// Map _id to whatever its pointing at {{{
 		if (isset($this->schema['_id']) && is_string($this->schema['_id'])) {
 			if (!isset($this->schema[$this->schema['_id']]))
@@ -123,6 +133,32 @@ class MY_Model extends CI_Model {
 				$this->_hides[] = $key;
 		}
 		// }}}
+	}
+
+	/**
+	* Get an idealized version of the schema
+	* This is usually the same as $schema but with some extra stuff added like _model, _table
+	* @return array The array structure representing the schema tree
+	*/
+	function GetSchema() {
+		$this->LoadSchema();
+		$schema = array(
+			'_model' => $this->model,
+			'_table' => $this->table,
+		);
+		$schema = array_merge($schema, $this->schema);
+		$schema['_id'] = $this->schema['_id']['field'];
+		$this->Trigger('getschema', $schema);
+		return $schema;
+	}
+
+	/**
+	* Force the setting of a schema from an object
+	* @param array $schema The schema array to load
+	*/
+	function SetSchema($schema) {
+		$this->schema = $schema;
+		$this->ReloadSchema();
 	}
 	// }}}
 	// Hook functions {{{
@@ -179,7 +215,7 @@ class MY_Model extends CI_Model {
 		return $this->_cache[$type][$id];
 	}
 	// }}}
-	
+
 	/**
 	* Retrieve a single item by its ID
 	* Calls the 'get' trigger on the retrieved row
