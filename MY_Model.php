@@ -101,7 +101,7 @@ class MY_Model extends CI_Model {
 			trigger_error("_id is unset for model {$this->model} via DefineSchema. It must be a string pointer to the ID or the schema structure.") && die();
 
 		if (isset($this->schema['_model'])) {
-			$this->table = $this->schema['_model'];
+			$this->model = $this->schema['_model'];
 			unset($this->schema['_model']);
 		} elseif (!$this->model)
 			trigger_error("Model is not set") && die();
