@@ -223,6 +223,20 @@ class MY_Model extends CI_Model {
 	}
 
 	/**
+	* Shorthand function to return all the available options for a given field
+	* This will only really be useful for [type=enum] as its the only one that should return something useful anyway
+	* @param string $field The field to return the available options for
+	*/
+	function GetOptions($field) {
+		$this->LoadSchema();
+		if (
+			isset($this->schema[$field]) && // A valid field
+			isset($this->schema[$field]['options']) // Valid options
+		)
+			return $this->schema[$field]['options'];
+	}
+
+	/**
 	* Called on each row after a Get() or GetAll() call to mangle the data provided back to the client
 	* This function also applies the 'hide' directive for all rows to remove the outgoing data
 	* Calls the 'get' trigger
