@@ -2,9 +2,11 @@
 /**
 * Triggers:
 *	create(&$data) - Used before the insert call in a DB
+*	created($id, $data) - Called after the successful insert of a record
 *	getall(&$where, &$orderby, &$limit, &$offset) - Used to add additional default parameters to the GetAll() function before it runs
 *	row(&$row) - Mangling function to rewrite a record (used in Get() and GetAll() functions per row)
 *	save(&$data) - Used before the update call in a DB
+*	saved($id, $data) - Called after the saving of a record
 *	schema(&$schema) - Schema is loaded
 */
 class MY_Model extends CI_Model {
@@ -282,7 +284,10 @@ class MY_Model extends CI_Model {
 			return FALSE;
 
 		$this->db->insert($this->table, $save);
-		return $this->db->insert_id();
+		$id = $this->db->insert_id();
+
+		$this->Trigger('created', $id, $save);
+		return $id;
 	}
 
 	/**
@@ -309,6 +314,8 @@ class MY_Model extends CI_Model {
 
 		$this->db->where($this->schema['_id']['field'], $id);
 		$this->db->update($this->table, $save);
+
+		$this->Trigger('saved', $id, $save);
 		return $save;
 	}
 
