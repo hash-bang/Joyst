@@ -10,21 +10,61 @@
 *	schema(&$schema) - Schema is loaded
 */
 class MY_Model extends CI_Model {
+	/**
+	* Name of this model for tracking purposes
+	* This can also be loaded by setting '_model' in $schema
+	* @var string
+	*/
 	var $model = '';
+
+	/**
+	* Name of the DB table to manipulate
+	* This can also be loaded by setting '_table' in $schema
+	* @var string
+	*/
 	var $table = '';
+
+	/**
+	* The schema object
+	* @var array
+	*/
 	var $schema = array();
+
+	/**
+	* Storage for all hooks
+	* Use the On(), Off() and Trigger() functions to manage this
+	* @see On()
+	* @see Off()
+	* @see Trigger()
+	*/
 	var $hooks = array();
 
+	/**
+	* List of things to cache the return value of
+	* @var array
+	*/
 	var $cache = array( // What to cache
 		'get' => 1,
 		'getby' => 1,
 		'getall' => 0,
 		'count' => 0,
 	);
+
+	/**
+	* Cache object list. This is usually in the form $_cache[function][id] where function usually is something like 'get'
+	* @var array
+	* @access private
+	*/
 	var $_cache = array(); // Actual cache storage
 
+	/**
+	* Cached list (computed from $schema) that contains all fields NOT to output
+	* @var array
+	* @access private
+	*/
 	var $_hides = array();
 
+	// Magic functions inc. Constructor {{{
 	function __construct() {
 		parent::__construct();
 		$this->LoadHooks();
@@ -34,7 +74,7 @@ class MY_Model extends CI_Model {
 		if (preg_match('/^getby(.+)$/i', $method, $matches)) // Make getBy* resolve to GetBy()
 			return $this->GetBy(strtolower($matches[1]), $params[0]);
 	}
-
+	// }}}
 	// Schema loader / reloader {{{
 	function LoadSchema() {
 		if ($this->schema) // Already loaded
