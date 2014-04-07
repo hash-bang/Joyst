@@ -367,12 +367,11 @@ class MY_Model extends CI_Model {
 		if (!$data)
 			return;
 		$this->LoadSchema();
+
 		$save = $this->SetData($data);
 
+		$this->Trigger('create', $save);
 		if (!$save) // Nothing to save
-			return FALSE;
-
-		if (! $save = $this->trigger('create', $save))
 			return FALSE;
 
 		$this->db->insert($this->table, $save);
@@ -395,9 +394,9 @@ class MY_Model extends CI_Model {
 
 		$this->LoadSchema();
 
-		$this->trigger('save', $id, $data);
-
 		$save = $this->SetData($data);
+
+		$this->trigger('save', $id, $data);
 
 		if (!$save) // Nothing to save
 			return FALSE;
