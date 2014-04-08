@@ -3,6 +3,9 @@
 * Triggers:
 *	create(&$data) - Used before the insert call in a DB
 *	created($id, $data) - Called after the successful insert of a record
+*	delete(&$id) - Delete a specific record by its ID if the ID is unset or set to null the operation is aborted (this can be used to remap to a save() call instead)
+*	deleted($id, $data) - Called after the successful delete of a record
+*	deleteall(&$where, &$orderby) - Similar to getall this trigger is called prior to a DeleteAll() function
 *	getall(&$where, &$orderby, &$limit, &$offset) - Used to add additional default parameters to the GetAll() function before it runs
 *	getschema(&$schema) - Asked to return a schema map to the caller
 *	row(&$row) - Mangling function to rewrite a record (used in Get() and GetAll() functions per row)
@@ -425,5 +428,51 @@ class MY_Model extends CI_Model {
 				$save[$field] = $value;
 		}
 		return $save;
+	}
+
+	/**
+	* Delete a single item by its ID
+	* Calls the 'delete' trigger on the retrieved row
+	* @param mixed|null $id The ID (usually an Int) to retrieve the row by
+	* @return bool The success of the delete operation
+	*/
+	function Delete($id) {
+		$this->LoadSchema();
+
+		$this->Trigger('delete', $id);
+		if (!$id)
+			return FALSE;
+
+		$this->db->from($this->table);
+		$this->db->where($this->schema['_id']['field'], $id);
+		$this->db->delete();
+
+		$this->Trigger('deleted', $id);
+		return TRUE;
+	}
+
+	/**
+	* Delete a number of records by a complex GetAll() compatible expression
+	* Calls the 'deleteall' trigger to apply additional filters
+	* This function really just wraps GetAll() and Delete() together
+	* @see GetAll()
+	* @see Delete()
+	* @see Each()
+	* @return int The number of records removed successfully
+	*/
+	function DeleteAll($where = null, $orderby = null) {
+		$this->LoadSchema();
+
+		$this->Trigger('deleteall', $where, $orderby);
+
+		if (!$rows = $this->GetAll($where, $orderby))
+			return;
+
+		$success = 0;
+		foreach($rows as $row)
+			if ($this->Delete($row[$this->schema['_id']['field']]))
+				$success++;
+
+		return (int) $success;
 	}
 }
