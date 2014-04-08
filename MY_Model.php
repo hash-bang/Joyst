@@ -252,7 +252,6 @@ class MY_Model extends CI_Model {
 		$this->db->from($this->table);
 		$this->db->where($param, $value);
 		$this->db->limit(1);
-		echo $this->db->_compile_select();
 		$row = $this->db->get()->row_array();
 		$this->Row($row);
 		return $this->SetCache('getby', $cacheid, $row);
