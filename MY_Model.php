@@ -306,11 +306,15 @@ class MY_Model extends CI_Model {
 
 	/**
 	* Shorthand function to run GetAll() and run a callback function on each return
+	* @param array $where A GetAll() compatible where condition
+	* @param callback $callback Callback to call on each matching item. Callback will take the form `function(&$row)`. If $row is boolean FALSE or the function returns FALSE the return of Each() will be omitted - similar to Map()
+	* @return array This function will always return an array, blank if nothing matched or populated if something did in a similar style to Map()
 	*/
 	function Each($where, $callback) {
+		$out = array();
 		$rows = $this->GetAll($where);
 		if (!$rows)
-			return;
+			return $out;
 		foreach ($rows as $row) {
 			$return = $callback($row);
 			if ($return === false || !$row) // We got (deep-checked) FALSE or row was mangled into nothing - skip
