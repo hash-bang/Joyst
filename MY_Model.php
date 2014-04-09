@@ -303,6 +303,30 @@ class MY_Model extends CI_Model {
 	}
 
 	/**
+	* Shorthand function to run GetAll() and run a callback function on each return
+	*/
+	function Each($where, $callback) {
+		$rows = $this->GetAll($where);
+		if (!$rows)
+			return;
+		foreach ($rows as $row) {
+			$return = $callback($row);
+			if ($return === false || !$row) // We got (deep-checked) FALSE or row was mangled into nothing - skip
+				continue;
+			$out[] = $row;
+		}
+		return $out;
+	}
+
+	/**
+	* Alias for Each
+	* @see Each()
+	*/
+	function Map($where, $callback) {
+		return $this->Each($where, $callback);
+	}
+
+	/**
 	* Shorthand function to return all the available options for a given field
 	* This will only really be useful for [type=enum] as its the only one that should return something useful anyway
 	* @param string $field The field to return the available options for
