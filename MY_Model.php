@@ -235,7 +235,8 @@ class MY_Model extends CI_Model {
 		$this->db->where($this->schema['_id']['field'], $id);
 		$this->db->limit(1);
 		$row = $this->db->get()->row_array();
-		$this->Row($row);
+		if ($row)
+			$this->Row($row);
 		return $this->SetCache('get', $id, $row);
 	}
 
@@ -256,7 +257,8 @@ class MY_Model extends CI_Model {
 		$this->db->where($param, $value);
 		$this->db->limit(1);
 		$row = $this->db->get()->row_array();
-		$this->Row($row);
+		if ($row)
+			$this->Row($row);
 		return $this->SetCache('getby', $cacheid, $row);
 	}
 
