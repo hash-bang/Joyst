@@ -1,4 +1,18 @@
-<?
+<?php
+// Sanity checks {{{
+if (!class_exists('CI_Model')) {
+	if (!function_exists('load_class')) {
+		trigger_error("JOYST - Can't find CodeIgniter load_model() function. Try you trying to load Joyst before loading CodeIgniter?");
+		die();
+	} else {
+		load_class('Model', 'core');
+		if (!class_exists('CI_Model'))
+			trigger_error("JOYST - Can't find CI_Model class even after requesting that CodeIgniter loads it via load_class('Model','core'). Something has gone seriously wrong.") && die();
+	}
+}
+// }}}
+
+
 /**
 * Triggers:
 *	create(&$data) - Used before the insert call in a DB
@@ -14,7 +28,7 @@
 *	saved($id, $data) - Called after the saving of a record
 *	setschema(&$schema) - Schema is loaded
 */
-class MY_Model extends CI_Model {
+class Joyst_Model extends CI_Model {
 	/**
 	* Name of this model for tracking purposes
 	* This can also be loaded by setting '_model' in $schema
