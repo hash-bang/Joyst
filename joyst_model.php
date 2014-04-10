@@ -251,7 +251,7 @@ class Joyst_Model extends CI_Model {
 		$this->db->limit(1);
 		$row = $this->db->get()->row_array();
 		if ($row)
-			$this->Row($row);
+			$this->ApplyRow($row);
 		return $this->SetCache('get', $id, $row);
 	}
 
@@ -273,7 +273,7 @@ class Joyst_Model extends CI_Model {
 		$this->db->limit(1);
 		$row = $this->db->get()->row_array();
 		if ($row)
-			$this->Row($row);
+			$this->ApplyRow($row);
 		return $this->SetCache('getby', $cacheid, $row);
 	}
 
@@ -310,7 +310,7 @@ class Joyst_Model extends CI_Model {
 
 		$out = array();
 		foreach ($this->db->get()->result_array() as $row) {
-			$this->Row($row);
+			$this->ApplyRow($row);
 			$out[] = $row;
 		}
 
@@ -365,17 +365,31 @@ class Joyst_Model extends CI_Model {
 	* Called on each row after a Get() or GetAll() call to mangle the data provided back to the client
 	* This function also applies the 'hide' directive for all rows to remove the outgoing data
 	* Calls the 'get' trigger
+	* @param array &$row The row to call the 'row' trigger on
 	* @see Get()
 	* @see GetAll()
+	* @see ApplyRows()
 	* @return array The mangled database row
 	*/
-	function Row(&$row) {
+	function ApplyRow(&$row) {
+		$this->LoadSchema();
 		$this->Trigger('row', $row);
 		if (!$this->_hides)
 			return;
 		foreach ($this->_hides as $field)
 			if (isset($row[$field]))
 				unset($row[$field]);
+	}
+
+	/**
+	* Convenience function to walk over an array-of-hashes and apply Row() to each member
+	* This function can work with hashes as well as arrays so either an array-of-hashes or hash-of-hashes are both fine
+	* @param array &$rows An array of hashes where the 'Row' call will be applied to each
+	*/
+	function ApplyRows(&$rows) {
+		foreach($rows as $key => $row) {
+			$this->ApplyRow($rows[$key]);
+		}
 	}
 
 	/**
