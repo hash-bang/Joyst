@@ -413,7 +413,7 @@ class Joyst_Model extends CI_Model {
 		$this->db->from($this->table);
 		if ($where)
 			$this->db->where($where);
-		$row = $this->db->get()->result_array();
+		$row = $this->db->get()->row_array();
 
 		return isset($cacheid) ? $this->SetCache('count', $cacheid, $row['count']) : $row['count'];
 	}
