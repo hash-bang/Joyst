@@ -92,6 +92,8 @@ class Joyst_Model extends CI_Model {
 	function __call($method, $params) {
 		if (preg_match('/^getby(.+)$/i', $method, $matches)) // Make getBy* resolve to GetBy()
 			return $this->GetBy(strtolower($matches[1]), $params[0]);
+		if ($method == 'construct')
+			return;
 		trigger_error("Method $method does not exist");
 	}
 	// }}}
