@@ -8,10 +8,8 @@
 * @author Matt Carter <m@ttcarter.com>
 */
 // Sanity checks {{{
-if (class_exists('Joyst_Model')) { // Already loaded?
-	echo "Skip load!";
+if (class_exists('Joyst_Model')) // Already loaded?
 	return;
-}
 
 if (!class_exists('CI_Model')) {
 	if (!function_exists('load_class')) {
@@ -24,7 +22,6 @@ if (!class_exists('CI_Model')) {
 	}
 }
 // }}}
-
 
 /**
 * Triggers:
