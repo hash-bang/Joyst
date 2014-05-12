@@ -1,5 +1,18 @@
 <?php
+/**
+* Joyst
+* A schema based CodeIgniter extension providing automated model functions
+*
+* @package Joyst
+* @url https://github.com/hash-bang/Joyst
+* @author Matt Carter <m@ttcarter.com>
+*/
 // Sanity checks {{{
+if (class_exists('Joyst_Model')) { // Already loaded?
+	echo "Skip load!";
+	return;
+}
+
 if (!class_exists('CI_Model')) {
 	if (!function_exists('load_class')) {
 		trigger_error("JOYST - Can't find CodeIgniter load_model() function. Try you trying to load Joyst before loading CodeIgniter?");
@@ -535,5 +548,11 @@ class Joyst_Model extends CI_Model {
 				$success++;
 
 		return (int) $success;
+	}
+
+	function Debug() {
+		$args = func_get_args();
+		echo "Joyst_model#Debug():" . print_r($args, 1);
+		die();
 	}
 }
