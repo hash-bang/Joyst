@@ -43,6 +43,13 @@ class Joyst_Controller extends CI_Controller {
 	*/
 	var $JSONOptions = 0;
 
+	/**
+	* Calls to JoystModel are normally fatal (i.e. CodeIgniter will not continue execution after they return)
+	* Switching this to false will disable that behaviour
+	* @var bool
+	*/
+	var $fatal = TRUE;
+
 
 	/**
 	* Convenience wrapper to return if the client is asking for some specific type of output
@@ -184,7 +191,8 @@ class Joyst_Controller extends CI_Controller {
 		header('Content-type: application/json');
 
 		echo json_encode($return, $this->JSONOptions);
-		exit;
+		if ($this->fatal)
+			exit;
 		// }}}
 	}
 }
