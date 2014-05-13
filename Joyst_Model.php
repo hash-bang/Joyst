@@ -55,6 +55,17 @@ class Joyst_Model extends CI_Model {
 
 	/**
 	* The schema object
+	*
+	* For each filter (all are optional):
+	* 	type: The type of field, this should correspond with the DB type or:
+	*		- Any db field
+	*		- pk - primary key
+	*		- fk - Foreign key
+	*	length: The length of the field
+	*	options: if type = 'enum' this contains either an array of options or a hash of possible keys and their human translation
+	*	readonly: Field should not allow saves
+	*	nofilter: Field should not be allowed in where conditions
+	*
 	* @var array
 	*/
 	var $schema = array();
@@ -191,6 +202,47 @@ class Joyst_Model extends CI_Model {
 		$this->schema = $schema;
 		$this->ReloadSchema();
 	}
+
+	/**
+	* Return an input array filtered by fields we are allowed to perform an operation on
+	* @param array $array The incomming hash of field values to filter
+	* @param string $operation The operation to perform. Can be: where, set, get
+	*/
+	function FilterFields($array, $operation = 'where') {
+		$out = array();
+		foreach ($array as $field => $value) {
+			if ($operation == 'where' && preg_match('/^(.*) (.*)$/', $field, $matches)) { // special CI syntax e.g. 'status !=' => 'something' (only for 'where' operations)
+				$key = $matches[1];
+				$cond = $matches[2];
+				$val = $value;
+			} else {
+				$key = $field;
+				$cond = '=';
+				$val = $value;
+			}
+
+			if (!isset($this->schema[$key])) // Field definition does not exist at all
+				continue;
+
+			if ( // Is read-only during a 'set'
+				$operation == 'set' &&
+				isset($this->schema[$key]['readonly']) &&
+				$this->schema[$key]['readonly']
+			)
+				continue;
+
+			if ( // Is not filterable by
+				$operation == 'where' &&
+				isset($this->schema[$key]['nofilter']) &&
+				$this->schema[$key]['nofilter']
+			)
+				continue;
+
+			// If we got this far its a valid field
+			$out[$field] = $value;
+		}
+		return $out;
+	}
 	// }}}
 	// Hook functions {{{
 	function LoadHooks() {
@@ -313,7 +365,7 @@ class Joyst_Model extends CI_Model {
 
 		$this->db->from($this->table);
 
-		if ($where)
+		if ($where = $this->FilterFields($where, 'where'))
 			$this->db->where($where);
 		if ($orderby)
 			$this->db->order_by($orderby);
@@ -423,7 +475,7 @@ class Joyst_Model extends CI_Model {
 
 		$this->db->select('COUNT(*) AS count');
 		$this->db->from($this->table);
-		if ($where)
+		if ($where = $this->FilterFields($where, 'where'))
 			$this->db->where($where);
 		$row = $this->db->get()->row_array();
 
@@ -441,16 +493,14 @@ class Joyst_Model extends CI_Model {
 			return;
 		$this->LoadSchema();
 
-		$save = $this->SetData($data);
-
-		$this->Trigger('create', $save);
-		if (!$save) // Nothing to save
+		$this->Trigger('create', $data);
+		if (! $data = $this->FilterFields($data, 'set')) // Nothing to save
 			return FALSE;
 
-		$this->db->insert($this->table, $save);
+		$this->db->insert($this->table, $data);
 		$id = $this->db->insert_id();
 
-		$this->Trigger('created', $id, $save);
+		$this->Trigger('created', $id, $data);
 		return $id;
 	}
 
@@ -467,37 +517,15 @@ class Joyst_Model extends CI_Model {
 
 		$this->LoadSchema();
 
-		$save = $this->SetData($data);
-
 		$this->trigger('save', $id, $data);
 
-		if (!$save) // Nothing to save
+		if (! $data = $this->FilterFields($data, 'set')) // Nothing to save
 			return FALSE;
 
 		$this->db->where($this->schema['_id']['field'], $id);
-		$this->db->update($this->table, $save);
+		$this->db->update($this->table, $data);
 
 		$this->Trigger('saved', $id, $save);
-		return $save;
-	}
-
-	/**
-	* Internal function used by Create() and Save() to determine exactly what fields to save
-	* @param array $data The incomming data to filter
-	* @return array The outgoing data that is safe to save to the DB
-	*/
-	function SetData($data) {
-		$save = array();
-		foreach ($data as $field => $value) {
-			if (
-				isset($this->schema[$field]) && // Is defined
-				(
-					!isset($this->schema[$field]['readonly']) || // No RO specified OR
-					!$this->schema[$field]['readonly'] // Its off anyway
-				)
-			)
-				$save[$field] = $value;
-		}
 		return $save;
 	}
 
