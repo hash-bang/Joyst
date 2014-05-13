@@ -36,6 +36,50 @@ class Joyst_Controller extends CI_Controller {
 		':num' => 'get(1)',
 	);
 
+	/**
+	* Default options passed to json_encode() to output JSON
+	* @var int
+	*/
+	var $JSONOptions = 0;
+
+
+	/**
+	* Convenience wrapper to return if the client is asking for some specific type of output
+	* There is a special _GET variable called 'json' which if set forces JSON mode. If set to 'nice' this can also pretty print on JSON() calls
+	* @param $type A type which corresponds to a known data type e.g. 'html', 'json'
+	* @return bool True if the client is asking for that given data type
+	*/
+	function RequesterWants($type) {
+		switch ($type) {
+			case 'html':
+				return !$this->Want('json');
+			case 'json':
+				if (isset($_GET['json'])) {
+					if ($_GET['json'] == 'nice' && version_compare(PHP_VERSION, '5.4.0') >= 0)
+						$this->JSONOptions = JSON_PRETTY_PRINT;
+					return TRUE;
+				}
+				if (
+					isset($_SERVER['HTTP_ACCEPT']) &&
+					preg_match('!application/json!', $_SERVER['HTTP_ACCEPT'])
+				)
+					return TRUE;
+				return FALSE;
+			case 'put-json': // Being passed IN a JSON blob (also converts incomming JSON into $_POST variables
+				if (!$this->Want('json')) // Not wanting JSON
+					return FALSE;
+				$in = file_get_contents('php://input');
+				if (!$in) // Nothing in raw POST
+					return FALSE;
+				$json = json_decode($in, true);
+				if ($json === null) // Not JSON
+					return FALSE;
+				$_POST = $json;
+				return TRUE;
+			default:
+				trigger_error("Unknown want type: '$type'");
+		}
+	}
 
 	/**
 	* Connect to a Joyst_Model and automatically route requests into various model functions
@@ -51,6 +95,9 @@ class Joyst_Controller extends CI_Controller {
 	* @param array $routes The routing array to use. If unspecified $defaultRoutes will be substituted
 	*/
 	function JoystModel($model, $routes = null) {
+		if (!$this->RequesterWants('json')) // Not wanting JSON - fall though to regular controller which should handle base HTML requests
+			return;
+
 		if (!$routes)
 			$routes = $this->defaultRoutes;
 
@@ -82,7 +129,6 @@ class Joyst_Controller extends CI_Controller {
 		if (!$matchingRoute) // Didn't find anything matching in routes
 			return;
 		$rawfunc = $routes[$matchingRoute];
-		$rawfunc = 'debug(*)';
 
 		// Extract any additional parameters
 		$params = $_GET;
@@ -109,7 +155,7 @@ class Joyst_Controller extends CI_Controller {
 				case '9':
 					if (!$segments)
 						$this->JSONError('Invalid URL format');
-					$args = $segments[$arg-1];
+					$args[] = $segments[$arg-1];
 					break;
 				case '*':
 					$args = $segments;
@@ -118,8 +164,25 @@ class Joyst_Controller extends CI_Controller {
 			}
 		// }}}
 
+		// Call function {{{
 		// Check the model is loaded and call the function
 		$this->load->model($model);
-		call_user_func_array(array($this->$model, $func), $args);
+		//echo "Call \$this->$model->$func(" . json_encode($args) . ")<br/>";
+		$return = call_user_func_array(array($this->$model, $func), $args);
+		// }}}
+
+		// Return output {{{
+		header("Expires: Mon, 26 Jul 1997 05:00:00 GMT" ); 
+		header("Last-Modified: " . gmdate( "D, d M Y H:i:s" ) . "GMT" ); 
+		header("Cache-Control: no-cache, must-revalidate" ); 
+		header("Pragma: no-cache" );
+		header('Content-type: application/json');
+
+		if  (!$return)
+			echo '[]';
+
+		echo json_encode($return, $this->JSONOptions);
+		exit;
+		// }}}
 	}
 }
