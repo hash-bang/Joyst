@@ -28,6 +28,7 @@ class Joyst_Controller extends CI_Controller {
 	* @see JoystModel()
 	*/
 	var $defaultRoutes = array(
+		'' => 'getall(#)',
 		'index' => 'getall(#)',
 		'get' => 'get(*)',
 		'create' => 'create(#)',
@@ -103,30 +104,34 @@ class Joyst_Controller extends CI_Controller {
 
 		$segments = $this->uri->segments;
 		array_shift($segments); // Shift first segment - assuming its the controller name
-		if (!$segments) // No arguments after controller name
-			return;
-		$segment = array_shift($segments); // Retrieve argument if any
+		if (!$segments) { // No arguments after controller name
+			if (isset($routes[''])) { // blank route exists
+				$matchingRoute = '';
+			} else
+				return; // No support for blank route is present and we have nothing to work with
+		} else {
+			$segment = array_shift($segments); // Retrieve argument if any
 
-		// Determine the route to use
-		$matchingRoute = null;
-		foreach ($routes as $route => $dest) {
-			switch ($route) {
-				case ':num':
-					if (is_numeric($segment)) {
-						$matchingRoute = $route;
-						array_unshift($segments, $segment); // Put the segment back
-						break 2;
-					}
-					break;
-				default:
-					if ($segment == $route) {
-						$matchingRoute = $route;
-						break 2;
-					}
+			// Determine the route to use
+			foreach ($routes as $route => $dest) {
+				switch ($route) {
+					case ':num':
+						if (is_numeric($segment)) {
+							$matchingRoute = $route;
+							array_unshift($segments, $segment); // Put the segment back
+							break 2;
+						}
+						break;
+					default:
+						if ($segment == $route) {
+							$matchingRoute = $route;
+							break 2;
+						}
+				}
 			}
 		}
 
-		if (!$matchingRoute) // Didn't find anything matching in routes
+		if (!isset($matchingRoute)) // Didn't find anything matching in routes
 			return;
 		$rawfunc = $routes[$matchingRoute];
 
@@ -177,9 +182,6 @@ class Joyst_Controller extends CI_Controller {
 		header("Cache-Control: no-cache, must-revalidate" ); 
 		header("Pragma: no-cache" );
 		header('Content-type: application/json');
-
-		if  (!$return)
-			echo '[]';
 
 		echo json_encode($return, $this->JSONOptions);
 		exit;
