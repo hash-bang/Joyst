@@ -179,6 +179,8 @@ class Joyst_Controller extends CI_Controller {
 		// Call function {{{
 		// Check the model is loaded and call the function
 		$this->load->model($model);
+		if (!is_subclass_of($this->$model, 'Joyst_Model'))
+			die("Use of \$this->JoystModel('$model') on a model that does not extend Joyst_Model");
 		//echo "Call \$this->$model->$func(" . json_encode($args) . ")<br/>";
 		$return = call_user_func_array(array($this->$model, $func), $args);
 		// }}}
