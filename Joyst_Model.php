@@ -511,6 +511,28 @@ class Joyst_Model extends CI_Model {
 	}
 
 	/**
+	* Wrapper around Save() to test if an ID is specified if not Create() is called instead
+	* @param array $data A hash of data to save, if the primary key is omitted Create() is called, if present Save() is called
+	*/
+	function SaveCreate($data) {
+		if (!$data)
+			return;
+
+		if (!is_array($data))
+			die('Joyst_Model#SaveCreate()> Data must be a hash');
+
+		$this->LoadSchema();
+
+		if (isset($data[$this->schema['_id']['field']])) { // ID present?
+			$id = $data[$this->schema['_id']['field']];
+			unset($data[$this->schema['_id']['field']]); // Remove ID from saving data (it will only be removed during filtering anyway as PKs can never be saved)
+			return $this->Save($id, $data);
+		} else { // ID not present - use create
+			return $this->Create($data);
+		}
+	}
+
+	/**
 	* Attempt to create a database record using the provided data
 	* Calls the 'create' trigger on the data before it is saved
 	* @param array $data A hash of data to attempt to store
