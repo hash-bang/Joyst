@@ -120,6 +120,7 @@ class Joyst_Controller extends CI_Controller {
 			$routes = $this->defaultRoutes;
 
 		$segments = $this->uri->segments;
+
 		array_shift($segments); // Shift first segment - assuming its the controller name
 		if (!$segments) { // No arguments after controller name
 			if (isset($routes[''])) { // blank route exists
@@ -159,8 +160,7 @@ class Joyst_Controller extends CI_Controller {
 
 				switch ($route) {
 					case '':
-						if (!$segments) {
-							echo "BLANK ROUTE [$route]" . print_r($segments,1);
+						if (!$segment && !$segments) {
 							$matchingRoute = $routeKey;
 							break 2;
 						}
