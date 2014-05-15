@@ -17,6 +17,11 @@ Install is via Composer with:
 	composer require hashbang/joyst
 
 
+Common errors:
+
+* `Fatal error: Class 'Joyst_Controller' not found` - Joyst needs to be loaded very early in the CI load order. Add a call to `require('vendor/autoload.php');` in `application/config/config.php` rather than the auto load file.
+
+
 Use within CodeIgniter
 ======================
 
