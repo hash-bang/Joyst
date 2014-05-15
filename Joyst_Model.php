@@ -469,8 +469,7 @@ class Joyst_Model extends CI_Model {
 		if (!$this->_hides)
 			return;
 		foreach ($this->_hides as $field)
-			if (isset($row[$field]))
-				unset($row[$field]);
+			unset($row[$field]);
 	}
 
 	/**
