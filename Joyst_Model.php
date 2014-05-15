@@ -24,6 +24,21 @@ if (!class_exists('CI_Model')) {
 // }}}
 
 /**
+* Schema (stored in $this->schema):
+* form of the array os 'field_name' => array_of_attributes.
+*
+* Valid attribtues:
+* @param string type The type of field, this should correspond with the DB type or: pk - primary key (implies readonly=1), fk - foreign key
+* @param int length The length of the field
+* @param array|hash options Used if type = 'enum' this contains either an array of options or a hash of possible keys and their human translation
+* @param bool readonly Field should not allow saves
+* @param bool hide Alias for !allowget setting this will hide the output from all get() and getall() calls
+* @param bool|function allowsave Allow this field to be updated in a save() operation (default: true)
+* @param bool|function allowcreate Allow this field to be set in a create() operation (default: true)
+* @param bool|function allowget Allow this field to be returned in a get() or getall() operation (default: true)
+* @param bool|function allowquery Allow this field to be used to filter items (default: true)
+*
+*
 * Triggers:
 *	create(&$data) - Used before the insert call in a DB
 *	created($id, $data) - Called after the successful insert of a record
@@ -55,16 +70,6 @@ class Joyst_Model extends CI_Model {
 
 	/**
 	* The schema object
-	*
-	* For each filter (all are optional):
-	* 	type: The type of field, this should correspond with the DB type or:
-	*		- Any db field
-	*		- pk - primary key
-	*		- fk - Foreign key
-	*	length: The length of the field
-	*	options: if type = 'enum' this contains either an array of options or a hash of possible keys and their human translation
-	*	readonly: Field should not allow saves
-	*	nofilter: Field should not be allowed in where conditions
 	*
 	* @var array
 	*/
@@ -168,11 +173,34 @@ class Joyst_Model extends CI_Model {
 			if (substr($key,0,1) == '_') // Is a meta field - skip
 				continue;
 			$this->schema[$key]['field'] = $key; // Map 'field' to the ID of each field
-			if ($this->schema[$key]['type'] == 'pk') { // All PK fields automatically become readonly
-				$this->schema[$key]['readonly'] = true;
+
+			// Deal with types {{{
+			if (!isset($this->schema[$key]['type'])) {
+				$this->schema[$key]['type'] = 'varchar';
+			} else if ($this->schema[$key]['type'] == 'pk') { // All PK fields automatically become readonly
+				$this->schema[$key]['allowcreate'] = false;
+				$this->schema[$key]['allowsave'] = false;
 			}
-			if (isset($this->schema[$key]['hide']) && $this->schema[$key]['hide'])
+			// }}}
+
+			// .readonly {{{
+			if (isset($this->schema[$key]['readonly']) && $this->schema[$key]['readonly']) { // readonly is an alias for allowsave
+				$this->schema[$key]['allowsave'] = false;
+				unset($this->schema[$key]['readonly']);
+			}
+			// }}}
+
+			// .hide {{{
+			if (isset($this->schema[$key]['hide']) && $this->schema[$key]['hide']) { // hide is an alias for allowget
+				$this->schema[$key]['allowget'] = false;
+				unset($this->schema[$key]['hide']);
+			}
+			// }}}
+
+			// .allowget {{{
+			if (isset($this->schema[$key]['allowget']) && !$this->schema[$key]['allowget'])
 				$this->_hides[] = $key;
+			// }}}
 		}
 		// }}}
 	}
@@ -226,15 +254,15 @@ class Joyst_Model extends CI_Model {
 
 			if ( // Is read-only during a 'set'
 				$operation == 'set' &&
-				isset($this->schema[$key]['readonly']) &&
-				$this->schema[$key]['readonly']
+				isset($this->schema[$key]['allowget']) &&
+				!$this->schema[$key]['allowget']
 			)
 				continue;
 
 			if ( // Is not filterable by
 				$operation == 'where' &&
-				isset($this->schema[$key]['nofilter']) &&
-				$this->schema[$key]['nofilter']
+				isset($this->schema[$key]['allowquery']) &&
+				!$this->schema[$key]['allowquery']
 			)
 				continue;
 
