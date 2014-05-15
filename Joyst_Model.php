@@ -557,15 +557,26 @@ class Joyst_Model extends CI_Model {
 	/**
 	* Attempt to save a database record using the provided data
 	* Calls the 'save' trigger on the data before it is saved
-	* @param mixed $id The ID to use to identify the record to change
-	* @param array $data A hash of data to attempt to store
+	* @param mixed|array $id The ID to use to identify the record to change or the full row to save (data will be ignored)
+	* @param array $data A hash of data to attempt to store (optional if ID is the full row)
 	* @return array|null Either the actual data saved (after mangling) or null
 	*/
-	function Save($id, $data) {
-		if (!$id || !$data)
+	function Save($id, $data = null) {
+		if (!$id)
 			return;
 
 		$this->LoadSchema();
+
+		if (is_array($id)) {
+			$data = $id;
+			if (!isset($data[$this->schema['_id']['field']])) // Incomming data has no ID to address by
+				return;
+			$id = $data[$this->schema['_id']['field']];
+			unset($data[$this->schema['_id']['field']]); // Remove ID from saving data (it will only be removed during filtering anyway as PKs can never be saved)
+		}
+
+		if (!$data)
+			return;
 
 		$this->trigger('save', $id, $data);
 
