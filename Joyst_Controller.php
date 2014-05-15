@@ -24,17 +24,20 @@ if (class_exists('Joyst_Controller')) // Already loaded?
 class Joyst_Controller extends CI_Controller {
 	/**
 	* The default routing rules used in JoystModel() if no specific rules are specified
+	* Routes are applied in the order specified, the first match being the one used
 	* @var array
 	* @see JoystModel()
 	*/
 	var $defaultRoutes = array(
-		'' => 'getall(#)',
+		'[JSON]' => 'saveCreate(#)', // Being passed a JSON stream
 		'index' => 'getall(#)',
 		'get' => 'get(*)',
 		'create' => 'create(#)',
 		'delete' => 'delete(#)',
-		'meta' => 'getschema()',
+		'meta' => 'getSchema()',
+		'[DELETE]:num' => 'delete(1)', // If being passed the DELETE method and an ID trigger delete() instead of get()
 		':num' => 'get(1)',
+		'' => 'getall(#)',
 	);
 
 	/**
@@ -73,17 +76,6 @@ class Joyst_Controller extends CI_Controller {
 				)
 					return TRUE;
 				return FALSE;
-			case 'put-json': // Being passed IN a JSON blob (also converts incomming JSON into $_POST variables
-				if (!$this->Want('json')) // Not wanting JSON
-					return FALSE;
-				$in = file_get_contents('php://input');
-				if (!$in) // Nothing in raw POST
-					return FALSE;
-				$json = json_decode($in, true);
-				if ($json === null) // Not JSON
-					return FALSE;
-				$_POST = $json;
-				return TRUE;
 			default:
 				trigger_error("Unknown want type: '$type'");
 		}
@@ -94,6 +86,10 @@ class Joyst_Controller extends CI_Controller {
 	*
 	* Routing is specified in the form 'path' => 'function(parameters...)'
 	*
+	* Path can be composed of:
+	*	* [method] - e.g. '[POST]'. It can also be compound: '[POST,GET]'
+	*	* url - Any url
+	*
 	* Parameters can be one or more of the following seperated by commas:
 	* 	* `#` - All remaining parameters as a hash
 	*       * `1..9` - A specific numbered parameter from the input
@@ -103,8 +99,22 @@ class Joyst_Controller extends CI_Controller {
 	* @param array $routes The routing array to use. If unspecified $defaultRoutes will be substituted
 	*/
 	function JoystModel($model, $routes = null) {
+		$gotJSON = FALSE; // Are we being passed a JSON object?
+
 		if (!$this->RequesterWants('json')) // Not wanting JSON - fall though to regular controller which should handle base HTML requests
 			return;
+
+		// Process incomming raw JSON {{{
+		$in = file_get_contents('php://input');
+		if ($in) { // Something in raw POST
+			$json = json_decode($in, true);
+			if ($json !== null) { // Looks like JSON
+				$_POST = $json;
+				$gotJSON = TRUE;
+			}
+		}
+		// }}}
+
 
 		if (!$routes)
 			$routes = $this->defaultRoutes;
@@ -120,18 +130,51 @@ class Joyst_Controller extends CI_Controller {
 			$segment = array_shift($segments); // Retrieve argument if any
 
 			// Determine the route to use
-			foreach ($routes as $route => $dest) {
+			foreach ($routes as $routeKey => $dest) {
+				$route = $routeKey;
+				if (preg_match('!^(.*)\[(.+?)\](.*)$!', $route, $matches)) { // Has a method in the form '[SOMETHING]'
+					$blockMatch = false; // Continue executing (set to false to stop)
+					foreach (preg_split('/\s*,\s*/', $matches[2]) as $block) { // Split CSV into bits
+						switch ($block) {
+							// Incomming HTTP methods
+							case 'GET':
+							case 'PUT':
+							case 'DELETE':
+							case 'POST':
+								if ($_SERVER['REQUEST_METHOD'] == $block) // Found route method does not match this one
+									$blockMatch = true;
+								break;
+							case 'JSON':
+								if ($gotJSON)
+									$blockMatch = true;
+								break;
+							default:
+								die("Joyst_Controller> Unsupported route query type: $block");
+						}
+					}
+					if (!$blockMatch)
+						continue;
+					$route = "{$matches[1]}{$matches[3]}"; // Delete from route and continue
+				}
+
 				switch ($route) {
+					case '':
+						if (!$segments) {
+							echo "BLANK ROUTE [$route]" . print_r($segments,1);
+							$matchingRoute = $routeKey;
+							break 2;
+						}
+						break;
 					case ':num':
 						if (is_numeric($segment)) {
-							$matchingRoute = $route;
+							$matchingRoute = $routeKey;
 							array_unshift($segments, $segment); // Put the segment back
 							break 2;
 						}
 						break;
 					default:
 						if ($segment == $route) {
-							$matchingRoute = $route;
+							$matchingRoute = $routeKey;
 							break 2;
 						}
 				}
@@ -143,7 +186,7 @@ class Joyst_Controller extends CI_Controller {
 		$rawfunc = $routes[$matchingRoute];
 
 		// Extract any additional parameters
-		$params = $_GET;
+		$params = array_merge($_POST, $_GET);
 
 		if (!preg_match('/^(.+?)\((.*)\)$/', $rawfunc, $matches))
 			die('Joyst_Controller: Invalid routing function format. Should be in the format func(), func(a), func(*), func(1) or similar. Given: ' . $func);
