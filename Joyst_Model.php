@@ -237,6 +237,8 @@ class Joyst_Model extends CI_Model {
 	* @param string $operation The operation to perform. Can be: where, set, get
 	*/
 	function FilterFields($array, $operation = 'where') {
+		if (!$array)
+			return;
 		$out = array();
 		foreach ($array as $field => $value) {
 			if ($operation == 'where' && preg_match('/^(.*) (.*)$/', $field, $matches)) { // special CI syntax e.g. 'status !=' => 'something' (only for 'where' operations)
