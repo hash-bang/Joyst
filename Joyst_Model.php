@@ -40,6 +40,8 @@ if (!class_exists('CI_Model')) {
 *
 *
 * Triggers:
+*	push(&$data) - Function called whenever saving or creating data (before create/delete/deleteall/save triggers). Place any checks for user being logged in to save in here.
+*	pull(&$condition) - Function called whenever retrieving data (before count/deleetall/getall/get/getby triggers). Place checks for data security in here.
 *	create(&$data) - Used before the insert call in a DB
 *	created($id, $data) - Called after the successful insert of a record
 *	delete(&$id) - Delete a specific record by its ID if the ID is unset or set to null the operation is aborted (this can be used to remap to a save() call instead)
@@ -368,6 +370,11 @@ class Joyst_Model extends CI_Model {
 			$this->ApplyRow($row);
 		if (!$this->continue)
 			return FALSE;
+
+		$this->Trigger('pull', $row);
+		if (!$this->continue)
+			return FALSE;
+
 		return $this->SetCache('get', $id, $row);
 	}
 
@@ -392,6 +399,11 @@ class Joyst_Model extends CI_Model {
 			$this->ApplyRow($row);
 		if (!$this->continue)
 			return FALSE;
+
+		$this->Trigger('pull', $row);
+		if (!$this->continue)
+			return FALSE;
+
 		return $this->SetCache('getby', $cacheid, $row);
 	}
 
@@ -414,6 +426,10 @@ class Joyst_Model extends CI_Model {
 			if ($value = $this->GetCache('getall', $cacheid))
 				return $value;
 		}
+
+		$this->Trigger('pull', $where);
+		if (!$this->continue)
+			return array();
 
 		$this->Trigger('getall', $where, $orderby, $limit, $offset);
 		if (!$this->continue)
@@ -534,6 +550,10 @@ class Joyst_Model extends CI_Model {
 				return $value;
 		}
 
+		$this->Trigger('pull', $where);
+		if (!$this->continue)
+			return 0;
+
 		$this->Trigger('getall', $where);
 		if (!$this->continue)
 			return 0;
@@ -582,6 +602,10 @@ class Joyst_Model extends CI_Model {
 			return;
 		$this->LoadSchema();
 
+		$this->Trigger('push', $data);
+		if (!$this->continue)
+			return FALSE;
+
 		$this->Trigger('create', $data);
 		if (! $data = $this->FilterFields($data, 'set')) // Nothing to save
 			return FALSE;
@@ -613,11 +637,18 @@ class Joyst_Model extends CI_Model {
 			if (!isset($data[$this->schema['_id']['field']])) // Incomming data has no ID to address by
 				return;
 			$id = $data[$this->schema['_id']['field']];
-			unset($data[$this->schema['_id']['field']]); // Remove ID from saving data (it will only be removed during filtering anyway as PKs can never be saved)
+		} else {
+			$data[$this->schema['_id']['field']] = $id;
 		}
 
 		if (!$data)
 			return;
+
+		$this->Trigger('push', $data);
+		if (!$this->continue)
+			return FALSE;
+
+		unset($data[$this->schema['_id']['field']]); // Remove ID from saving data (it will only be removed during filtering anyway as PKs can never be saved)
 
 		$this->trigger('save', $id, $data);
 		if (!$this->continue)
@@ -644,6 +675,11 @@ class Joyst_Model extends CI_Model {
 	function Delete($id) {
 		$this->LoadSchema();
 
+		$data = array($this->schema['_id']['field'] => $id);
+		$this->Trigger('push', $data);
+		if (!$this->continue)
+			return FALSE;
+
 		$this->Trigger('delete', $id);
 		if (!$id)
 			return FALSE;
@@ -669,6 +705,14 @@ class Joyst_Model extends CI_Model {
 	*/
 	function DeleteAll($where = null, $orderby = null) {
 		$this->LoadSchema();
+
+		$this->Trigger('pull', $where);
+		if (!$this->continue)
+			return FALSE;
+
+		$this->Trigger('push', $where);
+		if (!$this->continue)
+			return FALSE;
 
 		$this->Trigger('deleteall', $where, $orderby);
 
