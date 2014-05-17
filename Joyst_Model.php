@@ -109,6 +109,14 @@ class Joyst_Model extends CI_Model {
 	*/
 	var $_hides = array();
 
+	/**
+	* Joyst will continue to execute whenever this is true
+	* It is auto-set to true on each call to a data function (e.g. get(), getAll() etc.)
+	* @var bool
+	* @access private
+	*/
+	var $continue = TRUE;
+
 	// Magic functions inc. Constructor {{{
 	function __construct() {
 		parent::__construct();
@@ -330,12 +338,24 @@ class Joyst_Model extends CI_Model {
 	// }}}
 
 	/**
+	* Stop Joyst resolving a query
+	* This function will set $this->continue = FALSE and set $this->joystError to the $reason
+	* This can be placed in any callback to prevent Joyst from continuing execution
+	* @param string $reason An error message
+	*/
+	function Deny($reason = '$this->Joyst->Deny() called without a reason') {
+		$this->continue = FALSE;
+		$this->joystError = $reason;
+	}
+
+	/**
 	* Retrieve a single item by its ID
 	* Calls the 'get' trigger on the retrieved row
 	* @param mixed|null $id The ID (usually an Int) to retrieve the row by
 	* @return array The database row
 	*/
 	function Get($id) {
+		$this->continue = TRUE;
 		$this->LoadSchema();
 		if ($value = $this->GetCache('get', $id))
 			return $value;
@@ -346,6 +366,8 @@ class Joyst_Model extends CI_Model {
 		$row = $this->db->get()->row_array();
 		if ($row)
 			$this->ApplyRow($row);
+		if (!$this->continue)
+			return FALSE;
 		return $this->SetCache('get', $id, $row);
 	}
 
@@ -368,6 +390,8 @@ class Joyst_Model extends CI_Model {
 		$row = $this->db->get()->row_array();
 		if ($row)
 			$this->ApplyRow($row);
+		if (!$this->continue)
+			return FALSE;
 		return $this->SetCache('getby', $cacheid, $row);
 	}
 
@@ -392,6 +416,8 @@ class Joyst_Model extends CI_Model {
 		}
 
 		$this->Trigger('getall', $where, $orderby, $limit, $offset);
+		if (!$this->continue)
+			return FALSE;
 
 		$this->db->from($this->table);
 
@@ -405,10 +431,14 @@ class Joyst_Model extends CI_Model {
 		$out = array();
 		foreach ($this->db->get()->result_array() as $row) {
 			$this->ApplyRow($row);
+			if (!$this->continue)
+				return FALSE;
 			$out[] = $row;
 		}
 
 		$this->Trigger('rows', $out);
+		if (!$this->continue)
+			return FALSE;
 
 		return isset($cacheid) ? $this->SetCache('getall', $cacheid, $out) : $out;
 	}
@@ -468,6 +498,8 @@ class Joyst_Model extends CI_Model {
 	function ApplyRow(&$row) {
 		$this->LoadSchema();
 		$this->Trigger('row', $row);
+		if (!$this->continue)
+			return FALSE;
 		if (!$this->_hides)
 			return;
 		foreach ($this->_hides as $field)
@@ -482,6 +514,8 @@ class Joyst_Model extends CI_Model {
 	function ApplyRows(&$rows) {
 		foreach($rows as $key => $row) {
 			$this->ApplyRow($rows[$key]);
+			if (!$this->continue)
+				return FALSE;
 		}
 	}
 
@@ -501,12 +535,16 @@ class Joyst_Model extends CI_Model {
 		}
 
 		$this->Trigger('getall', $where);
+		if (!$this->continue)
+			return FALSE;
 
 		$this->db->select('COUNT(*) AS count');
 		$this->db->from($this->table);
 		if ($where = $this->FilterFields($where, 'where'))
 			$this->db->where($where);
 		$row = $this->db->get()->row_array();
+		if (!$this->continue)
+			return FALSE;
 
 		return isset($cacheid) ? $this->SetCache('count', $cacheid, $row['count']) : $row['count'];
 	}
@@ -547,6 +585,8 @@ class Joyst_Model extends CI_Model {
 		$this->Trigger('create', $data);
 		if (! $data = $this->FilterFields($data, 'set')) // Nothing to save
 			return FALSE;
+		if (!$this->continue)
+			return FALSE;
 
 		$this->db->insert($this->table, $data);
 		$id = $this->db->insert_id();
@@ -580,8 +620,12 @@ class Joyst_Model extends CI_Model {
 			return;
 
 		$this->trigger('save', $id, $data);
+		if (!$this->continue)
+			return FALSE;
 
 		if (! $data = $this->FilterFields($data, 'set')) // Nothing to save
+			return FALSE;
+		if (!$this->continue)
 			return FALSE;
 
 		$this->db->where($this->schema['_id']['field'], $id);
@@ -602,6 +646,8 @@ class Joyst_Model extends CI_Model {
 
 		$this->Trigger('delete', $id);
 		if (!$id)
+			return FALSE;
+		if (!$this->continue)
 			return FALSE;
 
 		$this->db->from($this->table);
@@ -626,6 +672,8 @@ class Joyst_Model extends CI_Model {
 
 		$this->Trigger('deleteall', $where, $orderby);
 
+		if (!$this->continue)
+			return FALSE;
 		if (!$rows = $this->GetAll($where, $orderby))
 			return;
 
