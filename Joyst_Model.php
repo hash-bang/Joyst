@@ -417,7 +417,7 @@ class Joyst_Model extends CI_Model {
 
 		$this->Trigger('getall', $where, $orderby, $limit, $offset);
 		if (!$this->continue)
-			return FALSE;
+			return array();
 
 		$this->db->from($this->table);
 
@@ -432,13 +432,13 @@ class Joyst_Model extends CI_Model {
 		foreach ($this->db->get()->result_array() as $row) {
 			$this->ApplyRow($row);
 			if (!$this->continue)
-				return FALSE;
+				return array();
 			$out[] = $row;
 		}
 
 		$this->Trigger('rows', $out);
 		if (!$this->continue)
-			return FALSE;
+			return array();
 
 		return isset($cacheid) ? $this->SetCache('getall', $cacheid, $out) : $out;
 	}
@@ -536,7 +536,7 @@ class Joyst_Model extends CI_Model {
 
 		$this->Trigger('getall', $where);
 		if (!$this->continue)
-			return FALSE;
+			return 0;
 
 		$this->db->select('COUNT(*) AS count');
 		$this->db->from($this->table);
@@ -544,7 +544,7 @@ class Joyst_Model extends CI_Model {
 			$this->db->where($where);
 		$row = $this->db->get()->row_array();
 		if (!$this->continue)
-			return FALSE;
+			return 0;
 
 		return isset($cacheid) ? $this->SetCache('count', $cacheid, $row['count']) : $row['count'];
 	}
