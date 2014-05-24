@@ -362,7 +362,16 @@ class Joyst_Model extends CI_Model {
 		if ($value = $this->GetCache('get', $id))
 			return $value;
 
-		$this->db->from($this->table);
+		$this->query = array(
+			'method' => 'get',
+			'table' => $this->table,
+			'where' => array(
+				$this->schema['_id']['field'] => $id,
+			),
+			'limit' => 1,
+		);
+
+		$this->db->from($this->query['table']);
 		$this->db->where($this->schema['_id']['field'], $id);
 		$this->db->limit(1);
 		$row = $this->db->get()->row_array();
@@ -390,6 +399,15 @@ class Joyst_Model extends CI_Model {
 		$this->LoadSchema();
 		if ($cacheval = $this->GetCache('getby', $cacheid = "$param-$value"))
 			return $cacheval;
+
+		$this->query = array(
+			'method' => 'getby',
+			'table' => $this->table,
+			'where' => array(
+				$param => $value,
+			),
+			'limit' => 1,
+		);
 
 		$this->db->from($this->table);
 		$this->db->where($param, $value);
@@ -426,6 +444,15 @@ class Joyst_Model extends CI_Model {
 			if ($value = $this->GetCache('getall', $cacheid))
 				return $value;
 		}
+
+		$this->query = array(
+			'method' => 'getall',
+			'table' => $this->table,
+			'where' => $where,
+			'orderby' => $orderby,
+			'limit' => $limit,
+			'offset' => $offset,
+		);
 
 		$this->Trigger('pull', $where);
 		if (!$this->continue)
@@ -550,6 +577,12 @@ class Joyst_Model extends CI_Model {
 				return $value;
 		}
 
+		$this->query = array(
+			'method' => 'count',
+			'table' => $this->table,
+			'where' => $where,
+		);
+
 		$this->Trigger('pull', $where);
 		if (!$this->continue)
 			return 0;
@@ -602,6 +635,12 @@ class Joyst_Model extends CI_Model {
 			return;
 		$this->LoadSchema();
 
+		$this->query = array(
+			'method' => 'create',
+			'table' => $this->table,
+			'data' => $data,
+		);
+
 		$this->Trigger('push', $data);
 		if (!$this->continue)
 			return FALSE;
@@ -643,6 +682,15 @@ class Joyst_Model extends CI_Model {
 
 		if (!$data)
 			return;
+
+		$this->query = array(
+			'method' => 'save',
+			'table' => $this->table,
+			'where' => array(
+				$this->schema['_id']['field'] => $id,
+			),
+			'data' => $data,
+		);
 
 		$this->Trigger('push', $data);
 		if (!$this->continue)
@@ -686,6 +734,14 @@ class Joyst_Model extends CI_Model {
 		if (!$this->continue)
 			return FALSE;
 
+		$this->query = array(
+			'method' => 'delete',
+			'table' => $this->table,
+			'where' => array(
+				$this->schema['_id']['field'] => $id,
+			),
+		);
+
 		$this->db->from($this->table);
 		$this->db->where($this->schema['_id']['field'], $id);
 		$this->db->delete();
@@ -705,6 +761,12 @@ class Joyst_Model extends CI_Model {
 	*/
 	function DeleteAll($where = null, $orderby = null) {
 		$this->LoadSchema();
+
+		$this->query = array(
+			'method' => 'deleteall',
+			'table' => $this->table,
+			'where' => $where,
+		);
 
 		$this->Trigger('pull', $where);
 		if (!$this->continue)
