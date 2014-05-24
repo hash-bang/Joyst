@@ -229,15 +229,33 @@ class Joyst_Controller extends CI_Controller {
 		// }}}
 
 		// Return output {{{
+		$this->JSON($return);
+		// }}}
+	}
+
+	/**
+	* Output an object or string as JSON
+	* @param string|array $object The sting or object to be output as JSON
+	* @return null If $this->fatal is TRUE this function will stop execution immediately
+	*/
+	function JSON($object = null) {
 		header("Expires: Mon, 26 Jul 1997 05:00:00 GMT" ); 
 		header("Last-Modified: " . gmdate( "D, d M Y H:i:s" ) . "GMT" ); 
 		header("Cache-Control: no-cache, must-revalidate" ); 
 		header("Pragma: no-cache" );
 		header('Content-type: application/json');
 
-		echo json_encode($return, $this->JSONOptions);
+		if (is_array($object)) {
+			echo json_encode($object, $this->JSONOptions);
+		} else if (is_bool($object)) {
+			echo 0;
+		} else if (is_string($object)) {
+			echo $object;
+		} else {
+			die('Unknown object type to convert into JSON: ' . gettype($object));
+		}
+
 		if ($this->fatal)
 			exit;
-		// }}}
 	}
 }
