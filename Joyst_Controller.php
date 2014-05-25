@@ -35,6 +35,7 @@ class Joyst_Controller extends CI_Controller {
 		'create' => 'create(#)',
 		'delete' => 'delete(#)',
 		'meta' => 'getSchema()',
+		'[JSON]:num' => 'save(1,#)',
 		'[DELETE]:num' => 'delete(1)', // If being passed the DELETE method and an ID trigger delete() instead of get()
 		':num' => 'get(1)',
 		'' => 'getall(#)',
@@ -160,7 +161,7 @@ class Joyst_Controller extends CI_Controller {
 
 				switch ($route) {
 					case '':
-						if (!$segment && !$segments) {
+						if (!$segment) {
 							$matchingRoute = $routeKey;
 							break 2;
 						}
@@ -251,6 +252,8 @@ class Joyst_Controller extends CI_Controller {
 			echo 0;
 		} else if (is_string($object)) {
 			echo $object;
+		} else if (is_null($object)) {
+			echo 'null';
 		} else {
 			die('Unknown object type to convert into JSON: ' . gettype($object));
 		}
