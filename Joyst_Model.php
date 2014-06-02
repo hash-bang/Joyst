@@ -119,6 +119,18 @@ class Joyst_Model extends CI_Model {
 	*/
 	var $continue = TRUE;
 
+	/**
+	* Whether calls to Save(), Create() or SaveCreate() should return the newly created / saved object (i.e. after execution immediately do a Get())
+	* @var bool
+	*/
+	var $returnRow = TRUE;
+
+	/**
+	* Allow blank create() calls
+	* @var bool
+	*/
+	var $allowBlankCreate = TRUE;
+
 	// Magic functions inc. Constructor {{{
 	function __construct() {
 		parent::__construct();
@@ -605,6 +617,7 @@ class Joyst_Model extends CI_Model {
 	/**
 	* Wrapper around Save() to test if an ID is specified if not Create() is called instead
 	* @param array $data A hash of data to save, if the primary key is omitted Create() is called, if present Save() is called
+	* @return null|array If $returnRow is true this function will return the newly created object, if FALSE the ID of the newly created object
 	*/
 	function SaveCreate($data) {
 		if (!$data)
@@ -628,10 +641,10 @@ class Joyst_Model extends CI_Model {
 	* Attempt to create a database record using the provided data
 	* Calls the 'create' trigger on the data before it is saved
 	* @param array $data A hash of data to attempt to store
-	* @return int|null Either the successful ID of the new record or null for failure
+	* @return null|array If $returnRow is true this function will return the newly created object, if FALSE the ID of the newly created object
 	*/
 	function Create($data) {
-		if (!$data)
+		if (!$this->allowBlankCreate && !$data)
 			return;
 		$this->LoadSchema();
 
@@ -655,7 +668,7 @@ class Joyst_Model extends CI_Model {
 		$id = $this->db->insert_id();
 
 		$this->Trigger('created', $id, $data);
-		return $id;
+		return $this->returnRow ? $this->Get($id) : $id;
 	}
 
 	/**
@@ -663,7 +676,7 @@ class Joyst_Model extends CI_Model {
 	* Calls the 'save' trigger on the data before it is saved
 	* @param mixed|array $id The ID to use to identify the record to change or the full row to save (data will be ignored)
 	* @param array $data A hash of data to attempt to store (optional if ID is the full row)
-	* @return array|null Either the actual data saved (after mangling) or null
+	* @return null|array If $returnRow is true this function will return the newly saved object, if FALSE the array of data saved
 	*/
 	function Save($id, $data = null) {
 		if (!$id)
@@ -711,7 +724,8 @@ class Joyst_Model extends CI_Model {
 		$this->db->update($this->table, $data);
 
 		$this->Trigger('saved', $id, $save);
-		return $save;
+
+		return $this->returnRow ? $this->Get($id) : $save;
 	}
 
 	/**

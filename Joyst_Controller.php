@@ -54,6 +54,11 @@ class Joyst_Controller extends CI_Controller {
 	*/
 	var $fatal = TRUE;
 
+	/**
+	* Whether Joyst should set the returnRow option on Joyst_Model to auto return the saved / created row back from the DB
+	* @var bool
+	*/
+	var $returnRow = TRUE;
 
 	/**
 	* Convenience wrapper to return if the client is asking for some specific type of output
@@ -226,6 +231,7 @@ class Joyst_Controller extends CI_Controller {
 		if (!is_subclass_of($this->$model, 'Joyst_Model'))
 			die("Use of \$this->JoystModel('$model') on a model that does not extend Joyst_Model");
 		//echo "Call \$this->$model->$func(" . json_encode($args) . ")<br/>";
+		$this->$model->returnRow = $this->returnRow; // Carry returnRow over into the Model
 		$return = call_user_func_array(array($this->$model, $func), $args);
 		// }}}
 
