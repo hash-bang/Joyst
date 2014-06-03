@@ -123,7 +123,7 @@ class Joyst_Model extends CI_Model {
 	* Whether calls to Save(), Create() or SaveCreate() should return the newly created / saved object (i.e. after execution immediately do a Get())
 	* @var bool
 	*/
-	var $returnRow = TRUE;
+	var $returnRow = FALSE;
 
 	/**
 	* Allow blank create() calls
