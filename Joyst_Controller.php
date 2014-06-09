@@ -236,7 +236,12 @@ class Joyst_Controller extends CI_Controller {
 		// }}}
 
 		// Return output {{{
-		$this->JSON($return);
+		if (!$this->$model->continue) {
+			header('HTTP/1.1 400 Bad Request', true, 400);
+			header('X-Error: ' . preg_replace('/[^a-z0-9 ]+/i', '_' , $this->$model->joystError));
+		} else {
+			$this->JSON($return);
+		}
 		// }}}
 	}
 
