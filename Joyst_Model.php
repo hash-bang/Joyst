@@ -363,6 +363,28 @@ class Joyst_Model extends CI_Model {
 	}
 
 	/**
+	* Pass a debugging header along to the client
+	* @param string|array $message Either a single message or array of messages
+	*/
+	function Debug($message) {
+		if (is_array($message)) {
+			foreach ($message as $m)
+				$this->Debug($m);
+			return;
+		}
+		header('X-Debug: ' . $this->_EscapeHeader($message));
+	}
+
+	/**
+	* Returns a sanitized header-safe string
+	* @param string $text The text to make safe
+	* @return string The sanitized string
+	*/
+	function _EscapeHeader($text) {
+		return preg_replace('/[^a-z0-9\'":#\-_+@\$\^\&\*\(\)\[\]\{\} ]+/i', '_' , $text);
+	}
+
+	/**
 	* Retrieve a single item by its ID
 	* Calls the 'get' trigger on the retrieved row
 	* @param mixed|null $id The ID (usually an Int) to retrieve the row by
@@ -805,7 +827,7 @@ class Joyst_Model extends CI_Model {
 		return (int) $success;
 	}
 
-	function Debug() {
+	function DebugReponse() {
 		$args = func_get_args();
 		echo "Joyst_model#Debug():" . print_r($args, 1);
 		die();
