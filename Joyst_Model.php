@@ -777,6 +777,7 @@ class Joyst_Model extends CI_Model {
 		$this->db->update($this->table, $data);
 
 		$this->Trigger('saved', $id, $save);
+		$this->ClearCache('get', $id); // Wipe the cache so the next get() doesn't return cached data
 
 		return $this->returnRow ? $this->Get($id) : $save;
 	}
