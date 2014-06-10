@@ -329,10 +329,21 @@ class Joyst_Model extends CI_Model {
 	}
 	// }}}
 	// Cache handling functions {{{
+	/**
+	* Helper function to quickly get whether caching should be enabled for a partiqular type
+	* @param string $type The type of operation (e.g. 'get')
+	* @return bool Whether caching is enabled for a given type
+	*/
 	function UseCache($type) {
 		return (isset($this->cache[$type]) && $this->cache[$type]);
 	}
 
+	/**
+	* Get the value of a cache entity
+	* @param string $type The operation (e.g. 'get', 'getall')
+	* @param mixed $id The ID of the row to cache
+	* @return mixed|null The cache contents if any
+	*/
 	function GetCache($type, $id) {
 		if (!isset($this->cache[$type]) || !$this->cache[$type]) // Dont cache this type of call
 			return FALSE;
@@ -341,6 +352,13 @@ class Joyst_Model extends CI_Model {
 		return FALSE;
 	}
 	
+	/**
+	* Set a cache item
+	* @param string $type The operation (e.g. 'get', 'getall')
+	* @param mixed $id The ID of the row to cache
+	* @param mixed|null $value The value to cache (set to null to remove from cache)
+	* @return mixed|null The cache contents if any
+	*/
 	function SetCache($type, $id, $value) {
 		if (!isset($this->cache[$type]) || !$this->cache[$type]) // Dont cache this type of call
 			return $value;
