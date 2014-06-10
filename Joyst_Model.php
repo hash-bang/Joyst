@@ -92,6 +92,7 @@ class Joyst_Model extends CI_Model {
 	*/
 	var $cache = array( // What to cache
 		'get' => 1,
+		'getbasic' => 1,
 		'getby' => 1,
 		'getall' => 0,
 		'count' => 0,
@@ -469,6 +470,38 @@ class Joyst_Model extends CI_Model {
 			return FALSE;
 
 		return $this->SetCache('get', $id, $row);
+	}
+
+	/**
+	* Similar to get() but does not fire the row() trigger to further populate a record
+	* @param mixed|null $id The ID (usually an Int) to retrieve the row by
+	* @return array The database row
+	*/
+	function GetBasic($id) {
+		$this->continue = TRUE;
+		$this->LoadSchema();
+		if ($value = $this->GetCache('getbasic', $id))
+			return $value;
+
+		$this->query = array(
+			'method' => 'getbasic',
+			'table' => $this->table,
+			'where' => array(
+				$this->schema['_id']['field'] => $id,
+			),
+			'limit' => 1,
+		);
+
+		$this->db->from($this->query['table']);
+		$this->db->where($this->schema['_id']['field'], $id);
+		$this->db->limit(1);
+		$row = $this->db->get()->row_array();
+
+		$this->Trigger('pull', $row);
+		if (!$this->continue)
+			return FALSE;
+
+		return $this->SetCache('getbasic', $id, $row);
 	}
 
 	/**
