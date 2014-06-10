@@ -362,10 +362,23 @@ class Joyst_Model extends CI_Model {
 	function SetCache($type, $id, $value) {
 		if (!isset($this->cache[$type]) || !$this->cache[$type]) // Dont cache this type of call
 			return $value;
-		if (!isset($this->_cache[$type]))
-			$this->_cache[$type] = array();
-		$this->_cache[$type][$id] = $value;
-		return $this->_cache[$type][$id];
+		if ($value) {
+			if (!isset($this->_cache[$type]))
+				$this->_cache[$type] = array();
+			$this->_cache[$type][$id] = $value;
+			return $this->_cache[$type][$id];
+		} elseif (isset($this->_cache[$type][$id])) {
+			unset($this->_cache[$type][$id]);
+			return null;
+		}
+	}
+
+	/**
+	* Alias for SetCache($type, $id, null)
+	* @see SetCache()
+	*/
+	function ClearCache($type, $id) {
+		return $this->SetCache($type, $id, null);
 	}
 	// }}}
 
