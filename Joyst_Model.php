@@ -374,11 +374,18 @@ class Joyst_Model extends CI_Model {
 	}
 
 	/**
-	* Alias for SetCache($type, $id, null)
-	* @see SetCache()
+	* Clears the cache of a specific item, type or entirely
+	* @param string|null $type Either the type of cache item to clear or null (in which case the entire cache is cleared)
+	* @param string|null $id Either the ID of the item to clear or null (in which case all cached items for the given $type is cleared)
 	*/
-	function ClearCache($type, $id) {
-		return $this->SetCache($type, $id, null);
+	function ClearCache($type = null, $id = null) {
+		if (!$type) { // Clear everything
+			$this->_cache = array();
+		} elseif (!$id) { // Clear on section
+			$this->_cache[$type] = array();
+		} else { // Clear a specific type/id combination
+			$this->SetCache($type, $id, null);
+		}
 	}
 	// }}}
 
