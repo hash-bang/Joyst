@@ -395,15 +395,27 @@ class Joyst_Model extends CI_Model {
 
 	/**
 	* Pass a debugging header along to the client
-	* @param string|array $message Either a single message or array of messages
+	* This function can take any number of parameters each of which will be safely sanitized into string form
+	* It works more or less the same as console.log() in JavaScript
+	* @param string|array $message,... Either a single message or array of messages
 	*/
-	function Debug($message) {
-		if (is_array($message)) {
-			foreach ($message as $m)
-				$this->Debug($m);
-			return;
+	function Debug() {
+		$args = func_get_args();
+		if (count($args) == 0) {
+			header('X-Debug: Hello World');
+		} elseif (count($args) == 1) {
+			header('X-Debug: ' . $this->_EscapeHeader($message));
+		} else {
+			$out = '';
+			foreach ($args as $arg) {
+				if (is_array($arg) || is_object($arg)) {
+					$out .= json_encode($arg) . ' ';
+				} else
+					$out .= $arg . ' ';
+			}
+			$out = substr($out, 0, -1);
+			header('X-Debug: ' . $this->_EscapeHeader($out));
 		}
-		header('X-Debug: ' . $this->_EscapeHeader($message));
 	}
 
 	/**
