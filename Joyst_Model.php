@@ -469,7 +469,7 @@ class Joyst_Model extends CI_Model {
 		);
 
 		$this->db->from($this->query['table']);
-		$this->db->where($this->schema['_id']['field'], $id);
+		$this->db->where("{$this->table}.{$this->schema['_id']['field']}", $id);
 		$this->db->limit(1);
 		$row = $this->db->get()->row_array();
 		if ($row)
@@ -505,7 +505,7 @@ class Joyst_Model extends CI_Model {
 		);
 
 		$this->db->from($this->query['table']);
-		$this->db->where($this->schema['_id']['field'], $id);
+		$this->db->where("{$this->table}.{$this->schema['_id']['field']}", $id);
 		$this->db->limit(1);
 		$row = $this->db->get()->row_array();
 
@@ -897,7 +897,7 @@ class Joyst_Model extends CI_Model {
 		if (!$this->continue)
 			return FALSE;
 
-		$this->db->where($this->schema['_id']['field'], $id);
+		$this->db->where("{$this->table}.{$this->schema['_id']['field']}", $id);
 		$this->db->update($this->table, $data);
 
 		$this->Trigger('saved', $id, $save);
@@ -935,7 +935,7 @@ class Joyst_Model extends CI_Model {
 		);
 
 		$this->db->from($this->table);
-		$this->db->where($this->schema['_id']['field'], $id);
+		$this->db->where("{$this->table}.{$this->schema['_id']['field']}", $id);
 		$this->db->delete();
 
 		$this->Trigger('deleted', $id);
