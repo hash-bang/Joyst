@@ -131,6 +131,8 @@ class Joyst_Model extends CI_Model {
 	* Normally all parameters would be returned as strings even if the DB type is a number
 	* e.g. users.userid = "1", "2" etc. If this option is turned on Joyst will force type casting BEFORE the JSON return to ensure users.userid = 1, 2 instead of a string
 	* This option is unfortunately necessary for Angular when using input[type=number] boxes which simply refuses to accept string values
+	* Enabling this switch automatically runs all returned keys though CastType()
+	* @see CastType()
 	* @var bool
 	*/
 	var $enforceTypes = TRUE;
@@ -674,21 +676,36 @@ class Joyst_Model extends CI_Model {
 		if ($this->enforceTypes)
 			foreach ($this->schema as $key => $props)
 				if (isset($row[$key]))
-					switch ($props['type']) {
-						case 'int':
-						case 'number':
-							$row[$key] = (int) $row[$key];
-							break;
-						case 'decimal':
-						case 'float':
-							$row[$key] = (float) $row[$key];
-							break;
-					}
+					$row[$key] = $this->CastType($props['type'], $row[$key]);
 
 		if (!$this->_hides)
 			return;
 		foreach ($this->_hides as $field)
 			unset($row[$field]);
+	}
+
+	/**
+	* Attempts to automatically convert from a database type into a PHP data type
+	* e.g. CastType('int', "123") // returns 123 as an INT type
+	* e.g. CastType('string', 123) // returns 123 as a STRING type
+	*
+	* @param string $type The type to cast to
+	* @param mixed $data The data to convert
+	* @return mixed The properly cast data type
+	*/
+	function CastType($type, $data) {
+		switch ($type) {
+			case 'int':
+			case 'number':
+				return (int) $data;
+			case 'decimal':
+			case 'float':
+				return (float) $data;
+			case 'string':
+				return (string) $data;
+			case 'json':
+				return json_decode($data, TRUE);
+		}
 	}
 
 	/**
