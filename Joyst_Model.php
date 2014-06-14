@@ -702,6 +702,8 @@ class Joyst_Model extends CI_Model {
 			case 'float':
 				return (float) $data;
 			case 'string':
+			case 'varchar':
+			case 'char':
 				return (string) $data;
 			case 'json':
 				return json_decode($data, TRUE);
