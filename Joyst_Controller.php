@@ -82,6 +82,17 @@ class Joyst_Controller extends CI_Controller {
 				)
 					return TRUE;
 				return FALSE;
+			case 'put-json': // Being passed IN a JSON blob (also converts incomming JSON into $_POST variables)
+				if (!$this->RequesterWants('json')) // Not wanting JSON
+					return FALSE;
+				$in = file_get_contents('php://input');
+				if (!$in) // Nothing in raw POST
+					return FALSE;
+				$json = json_decode($in, true);
+				if ($json === null) // Not JSON
+					return FALSE;
+				$_POST = $json;
+				return TRUE;
 			default:
 				trigger_error("Unknown want type: '$type'");
 		}
