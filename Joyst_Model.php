@@ -815,6 +815,11 @@ class Joyst_Model extends CI_Model {
 			return;
 		$this->LoadSchema();
 
+		if ($this->enforceTypes)
+			foreach ($this->schema as $key => $props)
+				if (isset($data[$key]))
+					$data[$key] = $this->UnCastType($props['type'], $data[$key]);
+
 		$this->query = array(
 			'method' => 'create',
 			'table' => $this->table,
@@ -862,6 +867,11 @@ class Joyst_Model extends CI_Model {
 
 		if (!$data)
 			return;
+
+		if ($this->enforceTypes)
+			foreach ($this->schema as $key => $props)
+				if (isset($data[$key]))
+					$data[$key] = $this->UnCastType($props['type'], $data[$key]);
 
 		$this->query = array(
 			'method' => 'save',
