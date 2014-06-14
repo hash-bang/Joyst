@@ -707,6 +707,24 @@ class Joyst_Model extends CI_Model {
 				return (string) $data;
 			case 'json':
 				return json_decode($data, TRUE);
+			default: // No idea what this is
+				return $data;
+		}
+	}
+
+	/**
+	* Converts a data type back into the DB format from the PHP object
+	* @see CastType
+	* @param string $type The type to cast from
+	* @param mixed $data The data to convert
+	* @return mixed The DB compatible data type
+	*/
+	function UnCastType($type, $data) {
+		switch ($type) {
+			case 'json':
+				return json_encode($data);
+			default: // No idea what this is or we dont care
+				return $data;
 		}
 	}
 
