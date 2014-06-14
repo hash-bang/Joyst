@@ -127,6 +127,16 @@ class Joyst_Model extends CI_Model {
 	var $returnRow = FALSE;
 
 	/**
+	* Enforce type hinting in JSON returns
+	* Normally all parameters would be returned as strings even if the DB type is a number
+	* e.g. users.userid = "1", "2" etc. If this option is turned on Joyst will force type casting BEFORE the JSON return to ensure users.userid = 1, 2 instead of a string
+	* This option is unfortunately necessary for Angular when using input[type=number] boxes which simply refuses to accept string values
+	* @var bool
+	*/
+	var $enforceTypes = TRUE;
+
+
+	/**
 	* Allow blank create() calls
 	* @var bool
 	*/
@@ -660,6 +670,21 @@ class Joyst_Model extends CI_Model {
 		$this->Trigger('row', $row);
 		if (!$this->continue)
 			return FALSE;
+
+		if ($this->enforceTypes)
+			foreach ($this->schema as $key => $props)
+				if (isset($row[$key]))
+					switch ($props['type']) {
+						case 'int':
+						case 'number':
+							$row[$key] = (int) $row[$key];
+							break;
+						case 'decimal':
+						case 'float':
+							$row[$key] = (float) $row[$key];
+							break;
+					}
+
 		if (!$this->_hides)
 			return;
 		foreach ($this->_hides as $field)
