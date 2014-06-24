@@ -291,8 +291,8 @@ class Joyst_Model extends CI_Model {
 
 			if ( // Is read-only during a 'set'
 				$operation == 'set' &&
-				isset($this->schema[$key]['allowget']) &&
-				!$this->schema[$key]['allowget']
+				isset($this->schema[$key]['allowset']) &&
+				!$this->schema[$key]['allowset']
 			)
 				continue;
 
