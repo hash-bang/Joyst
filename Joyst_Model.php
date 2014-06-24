@@ -444,7 +444,7 @@ class Joyst_Model extends CI_Model {
 	* @return string The sanitized string
 	*/
 	function _EscapeHeader($text) {
-		return preg_replace('/[^a-z0-9\'":#\-_+@\$\^\&\*\(\)\[\]\{\} ]+/i', '_' , $text);
+		return preg_replace('/[^a-z0-9\'":#\-_+@\$\^\&\*\(\)\[\]\{\}\., ]+/i', '_' , $text);
 	}
 
 	/**
