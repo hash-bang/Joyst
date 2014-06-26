@@ -250,6 +250,7 @@ class Joyst_Controller extends CI_Controller {
 		if (!$this->$model->continue) {
 			header('HTTP/1.1 400 Bad Request', true, 400);
 			header('X-Error: ' . $this->$model->_EscapeHeader($this->$model->joystError));
+			die();
 		} else {
 			$this->JSON($return);
 		}
