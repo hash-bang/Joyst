@@ -675,8 +675,11 @@ class Joyst_Model extends CI_Model {
 
 		if ($this->enforceTypes)
 			foreach ($this->schema as $key => $props)
-				if (isset($row[$key]))
-					$row[$key] = $this->CastType($props['type'], $row[$key]);
+				if (isset($row[$key])) {
+					$row[$key] = $this->CastType($props['type'], $row[$key], $row);
+					if ($row[$key] === null)
+						unset($row[$key]);
+				}
 
 		if (!$this->_hides)
 			return;
@@ -691,9 +694,10 @@ class Joyst_Model extends CI_Model {
 	*
 	* @param string $type The type to cast to
 	* @param mixed $data The data to convert
+	* @param array $row Row to operate on if type requires access to its peers (e.g. 'json-import')
 	* @return mixed The properly cast data type
 	*/
-	function CastType($type, $data) {
+	function CastType($type, $data, &$row = null) {
 		switch ($type) {
 			case 'int':
 			case 'number':
@@ -707,6 +711,13 @@ class Joyst_Model extends CI_Model {
 				return (string) $data;
 			case 'json':
 				return json_decode($data, TRUE);
+			case 'json-import':
+				$json = json_decode($data);
+				if ($json)
+					foreach ($json as $key => $val) {
+						$row[$key] = $val;
+					}
+				return null;
 			default: // No idea what this is
 				return $data;
 		}
@@ -717,12 +728,25 @@ class Joyst_Model extends CI_Model {
 	* @see CastType
 	* @param string $type The type to cast from
 	* @param mixed $data The data to convert
+	* @param array $row Row to operate on if type requires access to its peers (e.g. 'json-import')
 	* @return mixed The DB compatible data type
 	*/
-	function UnCastType($type, $data) {
+	function UnCastType($type, $data, &$row = null) {
 		switch ($type) {
 			case 'json':
 				return json_encode($data);
+			case 'json-import':
+				if (!is_array($data))
+					$data = array();
+				foreach ($row as $key => $val) {
+					if (substr($key, 0, 1) == '_') // Skip meta fields
+						continue;
+					if (!isset($this->schema[$key])) { // This key is unrecognised - import into JSON blob
+						$data[$key] = $val;
+						unset($row[$key]);
+					}
+				}
+				return $data;
 			default: // No idea what this is or we dont care
 				return $data;
 		}
@@ -818,7 +842,7 @@ class Joyst_Model extends CI_Model {
 		if ($this->enforceTypes)
 			foreach ($this->schema as $key => $props)
 				if (isset($data[$key]))
-					$data[$key] = $this->UnCastType($props['type'], $data[$key]);
+					$data[$key] = $this->UnCastType($props['type'], $data[$key], $data);
 
 		$this->query = array(
 			'method' => 'create',
@@ -871,7 +895,7 @@ class Joyst_Model extends CI_Model {
 		if ($this->enforceTypes)
 			foreach ($this->schema as $key => $props)
 				if (isset($data[$key]))
-					$data[$key] = $this->UnCastType($props['type'], $data[$key]);
+					$data[$key] = $this->UnCastType($props['type'], $data[$key], $data);
 
 		$this->query = array(
 			'method' => 'save',
