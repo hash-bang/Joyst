@@ -40,6 +40,7 @@ if (!class_exists('CI_Model')) {
 *
 *
 * Triggers:
+*	access(&$data) - Function before either a push or pull trigger. Use this to block any read/write access to data.
 *	push(&$data) - Function called whenever saving or creating data (before create/delete/deleteall/save triggers). Place any checks for user being logged in to save in here.
 *	pull(&$condition) - Function called whenever retrieving data (before count/deleetall/getall/get/getby triggers). Place checks for data security in here.
 *	create(&$data) - Used before the insert call in a DB
@@ -477,6 +478,10 @@ class Joyst_Model extends CI_Model {
 		if (!$this->continue)
 			return FALSE;
 
+		$this->Trigger('access', $row);
+		if (!$this->continue)
+			return FALSE;
+
 		$this->Trigger('pull', $row);
 		if (!$this->continue)
 			return FALSE;
@@ -508,6 +513,10 @@ class Joyst_Model extends CI_Model {
 		$this->db->where("{$this->table}.{$this->schema['_id']['field']}", $id);
 		$this->db->limit(1);
 		$row = $this->db->get()->row_array();
+
+		$this->Trigger('access', $row);
+		if (!$this->continue)
+			return FALSE;
 
 		$this->Trigger('pull', $row);
 		if (!$this->continue)
@@ -547,6 +556,10 @@ class Joyst_Model extends CI_Model {
 		if (!$this->continue)
 			return FALSE;
 
+		$this->Trigger('access', $row);
+		if (!$this->continue)
+			return FALSE;
+
 		$this->Trigger('pull', $row);
 		if (!$this->continue)
 			return FALSE;
@@ -582,6 +595,10 @@ class Joyst_Model extends CI_Model {
 			'limit' => $limit,
 			'offset' => $offset,
 		);
+
+		$this->Trigger('access', $where);
+		if (!$this->continue)
+			return array();
 
 		$this->Trigger('pull', $where);
 		if (!$this->continue)
@@ -786,6 +803,10 @@ class Joyst_Model extends CI_Model {
 			'where' => $where,
 		);
 
+		$this->Trigger('access', $where);
+		if (!$this->continue)
+			return 0;
+
 		$this->Trigger('pull', $where);
 		if (!$this->continue)
 			return 0;
@@ -850,6 +871,10 @@ class Joyst_Model extends CI_Model {
 			'data' => $data,
 		);
 
+		$this->Trigger('access', $data);
+		if (!$this->continue)
+			return FALSE;
+
 		$this->Trigger('push', $data);
 		if (!$this->continue)
 			return FALSE;
@@ -906,6 +931,10 @@ class Joyst_Model extends CI_Model {
 			'data' => $data,
 		);
 
+		$this->Trigger('access', $data);
+		if (!$this->continue)
+			return FALSE;
+
 		$this->Trigger('push', $data);
 		if (!$this->continue)
 			return FALSE;
@@ -940,6 +969,11 @@ class Joyst_Model extends CI_Model {
 		$this->LoadSchema();
 
 		$data = array($this->schema['_id']['field'] => $id);
+
+		$this->Trigger('access', $data);
+		if (!$this->continue)
+			return FALSE;
+
 		$this->Trigger('push', $data);
 		if (!$this->continue)
 			return FALSE;
@@ -983,6 +1017,10 @@ class Joyst_Model extends CI_Model {
 			'table' => $this->table,
 			'where' => $where,
 		);
+
+		$this->Trigger('access', $where);
+		if (!$this->continue)
+			return FALSE;
 
 		$this->Trigger('pull', $where);
 		if (!$this->continue)
