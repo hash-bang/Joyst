@@ -486,11 +486,11 @@ class Joyst_Model extends CI_Model {
 		if (!$this->continue)
 			return FALSE;
 
-		$this->Trigger('access', $row);
+		$this->Trigger('access', $this->query['where']);
 		if (!$this->continue)
 			return FALSE;
 
-		$this->Trigger('pull', $row);
+		$this->Trigger('pull', $this->query['where']);
 		if (!$this->continue)
 			return FALSE;
 
