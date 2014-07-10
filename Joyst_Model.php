@@ -871,8 +871,8 @@ class Joyst_Model extends CI_Model {
 
 		if ($this->enforceTypes)
 			foreach ($this->schema as $key => $props)
-				if (isset($data[$key]))
-					$data[$key] = $this->UnCastType($props['type'], $data[$key], $data);
+				if (isset($data[$key]) || $props['type'] == 'json-import')
+					$data[$key] = $this->UnCastType($props['type'], isset($data[$key]) ? $data[$key] : null, $data);
 
 		$this->ResetQuery(array(
 			'method' => 'create',
@@ -928,8 +928,8 @@ class Joyst_Model extends CI_Model {
 
 		if ($this->enforceTypes)
 			foreach ($this->schema as $key => $props)
-				if (isset($data[$key]))
-					$data[$key] = $this->UnCastType($props['type'], $data[$key], $data);
+				if (isset($data[$key]) || $props['type'] == 'json-import')
+					$data[$key] = $this->UnCastType($props['type'], isset($data[$key]) ? $data[$key] : null, $data);
 
 		$this->ResetQuery(array(
 			'method' => 'save',
