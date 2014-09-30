@@ -241,7 +241,8 @@ class Joyst_Controller extends CI_Controller {
 		$this->load->model($model);
 		if (!is_subclass_of($this->$model, 'Joyst_Model'))
 			die("Use of \$this->JoystModel('$model') on a model that does not extend Joyst_Model");
-		//echo "Call \$this->$model->$func(" . json_encode($args) . ")<br/>";
+		$this->$model->source = 'controller'; // Tell the model how its been invoked
+		// echo "Call \$this->$model->$func(" . json_encode($args) . ")<br/>";
 		$this->$model->returnRow = $this->returnRow; // Carry returnRow over into the Model
 		$return = call_user_func_array(array($this->$model, $func), $args);
 		// }}}
