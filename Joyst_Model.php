@@ -298,7 +298,7 @@ class Joyst_Model extends CI_Model {
 				$key = $matches[1];
 				$cond = $matches[2];
 				$val = $value;
-			} elseif ($operation == 'where' && $this->source == 'controller' && preg_match('/^([\<\>]=?)(.*)$/', $value, $matches)) { // CI syntax in value e.g. '>=value'
+			} elseif ($operation == 'where' && $this->source == 'controller' && is_string($value) && preg_match('/^([\<\>]=?)(.*)$/', $value, $matches)) { // CI syntax in value e.g. '>=value'
 				$key = $field;
 				$cond = $matches[1];
 				$val = $matches[2];
