@@ -302,6 +302,19 @@ class Joyst_Model extends CI_Model {
 				$key = $field;
 				$cond = $matches[1];
 				$val = $matches[2];
+			} elseif ($operation == 'where' && $this->source == 'controller' && is_array($value) && preg_match('/^([\<\>]=?)(.*)$/', $value[0], $matches)) { // CI syntax in value via array (e.g. ['>=value', '<=value'])
+				// Accept an array of where conditions - this works around the fact that PHP will always accept the LAST where condition in an URL
+				// e.g. ?foo=>1&foo=<10 (foo will == '<10')
+				// Use ?foo[]=>1&foo[]=<10 to work around this
+				$key = $field;
+				$cond = $matches[1];
+				$val = $matches[2];
+
+				array_shift($value); // Remove first element - which we've already taken care of
+				foreach ($value as $valIndex => $valArray) {
+					if (preg_match('/^([\<\>]=?)(.*)$/', $value[$valIndex], $matches))
+						$out[isset($matches[1]) && $matches[1] != '=' ? "$key {$matches[1]}" : $key] = $matches[2];
+				}
 			} else {
 				$key = $field;
 				$cond = '=';
